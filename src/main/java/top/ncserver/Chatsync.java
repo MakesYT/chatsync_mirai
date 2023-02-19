@@ -11,26 +11,26 @@ import net.mamoe.mirai.event.events.BotOnlineEvent;
 import net.mamoe.mirai.message.data.Face;
 import net.mamoe.mirai.message.data.PlainText;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.plugins.HeartPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
-import top.ncserver.chatsync.Until.*;
+import top.ncserver.chatsync.Until.ChatsyncCommand;
+import top.ncserver.chatsync.Until.Config;
+import top.ncserver.chatsync.Until.TextToImg;
 import top.ncserver.chatsync.V2.MsgTools;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public final class Chatsync extends JavaPlugin {
     public static final Chatsync INSTANCE = new Chatsync();
 
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "0.9.0")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "0.9.1")
                 .name("chatsync")
                 .author("makesyt")
                 .build());

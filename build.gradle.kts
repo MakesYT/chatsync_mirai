@@ -8,8 +8,8 @@ plugins {
 }
 
 group = "top.ncserver"
-version = "0.9.0"
-mirai.jvmTarget=JavaVersion.VERSION_11
+version = "0.9.1"
+mirai.jvmTarget = JavaVersion.VERSION_11
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")
