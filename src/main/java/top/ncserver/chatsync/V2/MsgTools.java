@@ -21,11 +21,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -138,35 +136,39 @@ public class MsgTools {
                                         System.out.println(Image.queryUrl(img));
                                         HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-                                        msg1.put("type","img");
-                                        msg1.put("permission",event.getSender().getPermission().getLevel());
-                                        msg1.put("sender",event.getSenderName());
-                                        msg1.put("data",Base64.getEncoder().encodeToString(response.body()));
-                                        JSONObject jo= new JSONObject(msg1);
+                                        msg1.put("type", "img");
+                                        msg1.put("permission", event.getSender().getPermission().getLevel());
+                                        msg1.put("sender", event.getSenderName());
+                                        msg1.put("data", Base64.getEncoder().encodeToString(response.body()));
+                                        JSONObject jo = new JSONObject(msg1);
                                         Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                        msgSend(Chatsync.session,jo.toJSONString());
+                                        msgSend(Chatsync.session, jo.toJSONString());
                                     } catch (IOException | InterruptedException e) {
                                         Chatsync.chatsync.getLogger().info("图片请求失败");
                                     }
                                     break;
                                 }
-                                case "QuoteReply":{
+                                case "QuoteReply": {
                                     break;
                                 }
-                                default:{
+                                default: {
 
-                                    MessageChain messageChain= MessageChain.deserializeFromJsonString("["+((JSONObject)o).toJSONString()+"]");
+                                    MessageChain messageChain = MessageChain.deserializeFromJsonString("[" + ((JSONObject) o).toJSONString() + "]");
                                     sb.append(messageChain.get(0).contentToString());
                                 }
                             }
                         }
-                        msg1.put("type","msg");
-                        msg1.put("permission",event.getSender().getPermission().getLevel());
-                        msg1.put("sender",event.getSenderName());
-                        msg1.put("msg",sb);
-                        JSONObject jo= new JSONObject(msg1);
-                        Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                        msgSend(Chatsync.session,jo.toJSONString());
+                        if (sb.length() > 0) {
+                            msg1.clear();
+                            msg1.put("type", "msg");
+                            msg1.put("permission", event.getSender().getPermission().getLevel());
+                            msg1.put("sender", event.getSenderName());
+                            msg1.put("msg", sb);
+                            JSONObject jo = new JSONObject(msg1);
+                            Chatsync.chatsync.getLogger().info(jo.toJSONString());
+                            msgSend(Chatsync.session, jo.toJSONString());
+                        }
+
 
                     }
 
