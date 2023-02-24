@@ -30,7 +30,7 @@ public final class Chatsync extends JavaPlugin {
     public static final Chatsync INSTANCE = new Chatsync();
 
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "0.9.1")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.0.0")
                 .name("chatsync")
                 .author("makesyt")
                 .build());
@@ -49,28 +49,32 @@ public final class Chatsync extends JavaPlugin {
         getLogger().info("机器人加载完成,开始在127.0.0.1:"+Config.INSTANCE.getPort()+"创建socke服务器");
         MsgTools.listenerInit();
         GlobalEventChannel.INSTANCE.subscribeAlways(BotOnlineEvent.class, (event) -> {
-            bot= Bot.getInstances().get(0);
-            try {
-                File file = TextToImg.toImg("消息同步QQ侧已加载,当前JDK版本:"+System.getProperty ("java.version"));
-                MsgTools.QQsendImg(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            bot = Bot.getInstances().get(0);
+            if (Config.INSTANCE.getQQLoadedImg()) {
+                try {
+                    File file = TextToImg.toImg("消息同步QQ侧已加载,当前JDK版本:" + System.getProperty("java.version"));
+                    MsgTools.QQsendImg(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
 
         });
         GlobalEventChannel.INSTANCE.subscribeAlways(BotOfflineEvent.class, (event) -> {
             bot= null;
         });
-        if ( Bot.getInstances().size()>0){
-            bot= Bot.getInstances().get(0);
-
-
-            try {
-                File file = TextToImg.toImg("消息同步QQ侧已加载");
-                MsgTools.QQsendImg(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        if ( Bot.getInstances().size()>0) {
+            bot = Bot.getInstances().get(0);
+            if (Config.INSTANCE.getQQLoadedImg()) {
+                try {
+                    File file = TextToImg.toImg("消息同步QQ侧已加载");
+                    MsgTools.QQsendImg(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
 
         }
 

@@ -210,33 +210,47 @@ public class MsgTools {
             if (Chatsync.INSTANCE.isConnected){
                 switch (jsonObject.getString("type")){
                     case "msg":
-                        if (Config.INSTANCE.getSyncMsg()){
-                            System.out.println("["+jsonObject.getString("sender")+"]:"+jsonObject.getString("msg"));
-                            QQsendMsg(Config.INSTANCE.getMsgStyle().replaceAll("%s",jsonObject.getString("sender")).replaceAll("%msg",jsonObject.getString("msg")));
+                        if (Config.INSTANCE.getSyncMsg()) {
+                            System.out.println("[" + jsonObject.getString("sender") + "]:" + jsonObject.getString("msg"));
+                            QQsendMsg(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg")));
                         }
                         break;
                     case "playerJoinAndQuit":
-                        QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
+                        if (Config.INSTANCE.getSyncMsg()) {
+                            QQsendMsg(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")));
+                        }
+                        //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                         break;
                     case "playerList":
-                        QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
+                        QQsendMsg(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")));
+                        //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                         break;
                     case "command":
-                        QQsendMsg("接收到命令回馈,正在渲染图片");
-                        long start = System.currentTimeMillis();
-                        File file= TextToImg.toImg(jsonObject.getString("command"));
-                        long finish = System.currentTimeMillis();
-                        long timeElapsed = finish - start;
-                        QQsendMsg("完成,耗时"+timeElapsed+"ms,上传中");
-                        QQsendImg(file);
-                        System.gc();
+                        if (Config.INSTANCE.getImgTimer()) {
+                            QQsendMsg(Config.INSTANCE.getImgTimerMsgStyle1());
+                            long start = System.currentTimeMillis();
+                            File file = TextToImg.toImg(jsonObject.getString("command"));
+                            long finish = System.currentTimeMillis();
+                            long timeElapsed = finish - start;
+                            QQsendMsg(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed)));
+
+                            QQsendImg(file);
+                            System.gc();
+                        } else {
+                            File file = TextToImg.toImg(jsonObject.getString("command"));
+                            QQsendImg(file);
+                            System.gc();
+                        }
+
+
                         break;
                     case "serverCommand":
-                        QQsendMsg("注意服务器执行："+jsonObject.getString("command")+"\n注意服务器安全");
+                        QQsendMsg("注意服务器执行：" + jsonObject.getString("command") + "\n注意服务器安全");
                         break;
                     case "playerDeath":
                     case "obRe":
-                        QQsendMsg(CullColorCode(jsonObject.getString("msg")));
+                        QQsendMsg(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg"))));
+                        // QQsendMsg(CullColorCode(jsonObject.getString("msg")));
                         break;
                 }
             }
