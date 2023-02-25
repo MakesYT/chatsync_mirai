@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import kotlin.text.Charsets;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.message.code.MiraiCode;
 import net.mamoe.mirai.message.data.*;
 import net.mamoe.mirai.utils.ExternalResource;
 import org.smartboot.socket.transport.AioSession;
@@ -212,17 +213,17 @@ public class MsgTools {
                     case "msg":
                         if (Config.INSTANCE.getSyncMsg()) {
                             System.out.println("[" + jsonObject.getString("sender") + "]:" + jsonObject.getString("msg"));
-                            QQsendMsg(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg")));
+                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg"))));
                         }
                         break;
                     case "playerJoinAndQuit":
                         if (Config.INSTANCE.getSyncMsg()) {
-                            QQsendMsg(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")));
+                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg"))));
                         }
                         //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                         break;
                     case "playerList":
-                        QQsendMsg(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")));
+                        QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg"))));
                         //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                         break;
                     case "command":
@@ -232,7 +233,7 @@ public class MsgTools {
                             File file = TextToImg.toImg(jsonObject.getString("command"));
                             long finish = System.currentTimeMillis();
                             long timeElapsed = finish - start;
-                            QQsendMsg(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed)));
+                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed))));
 
                             QQsendImg(file);
                             System.gc();
@@ -249,7 +250,7 @@ public class MsgTools {
                         break;
                     case "playerDeath":
                     case "obRe":
-                        QQsendMsg(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg"))));
+                        QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg")))));
                         // QQsendMsg(CullColorCode(jsonObject.getString("msg")));
                         break;
                 }

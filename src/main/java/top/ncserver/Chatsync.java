@@ -8,8 +8,8 @@ import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescriptionBuilder;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.BotOfflineEvent;
 import net.mamoe.mirai.event.events.BotOnlineEvent;
-import net.mamoe.mirai.message.data.Face;
-import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.code.MiraiCode;
+import net.mamoe.mirai.message.data.MessageChain;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
@@ -29,24 +29,27 @@ import java.util.Map;
 public final class Chatsync extends JavaPlugin {
     public static final Chatsync INSTANCE = new Chatsync();
 
+    public static Bot bot;
+    public static Chatsync chatsync;
+    public static AioSession session;
+    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg());
+    public boolean isConnected = false;
+    public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.0.0")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.0.1")
                 .name("chatsync")
                 .author("makesyt")
                 .build());
     }
-    public static  Bot bot;
-    public static  Chatsync chatsync;
-    public  static AioSession session;
-    public boolean isConnected = false;
+
     @Override
     public void onEnable() {
-        chatsync=this;
-        CommandManager.INSTANCE.registerCommand(new ChatsyncCommand(),true);
+        chatsync = this;
+        CommandManager.INSTANCE.registerCommand(new ChatsyncCommand(), true);
         this.reloadPluginConfig(Config.INSTANCE);
         getLogger().info("Plugin loaded!");
         bot = null;
-        getLogger().info("机器人加载完成,开始在127.0.0.1:"+Config.INSTANCE.getPort()+"创建socke服务器");
+        getLogger().info("机器人加载完成,开始在127.0.0.1:" + Config.INSTANCE.getPort() + "创建socke服务器");
         MsgTools.listenerInit();
         GlobalEventChannel.INSTANCE.subscribeAlways(BotOnlineEvent.class, (event) -> {
             bot = Bot.getInstances().get(0);
@@ -94,7 +97,7 @@ public final class Chatsync extends JavaPlugin {
                     if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)){
                         session = aioSession;
                         if (bot!=null){
-                            MsgTools.QQsendMsgMessageChain(new PlainText("服务器有了,别问我几个月的,我也不知道").plus(new Face(178)));
+                            MsgTools.QQsendMsgMessageChain(ServerOnlineMsg);
                         }
                         {
                             Map<String,Object> msg1 = new HashMap<>();
@@ -116,7 +119,7 @@ public final class Chatsync extends JavaPlugin {
                         isConnected=true;
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
                         if (bot!=null){
-                            MsgTools.QQsendMsgMessageChain(new PlainText("服务器没了,等重启吧").plus(new Face(173)).plus(new Face(174)));
+                            MsgTools.QQsendMsgMessageChain(ServerOfflineMsg);
                         }
                         isConnected=false;
                     }
