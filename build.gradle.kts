@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "top.ncserver"
-version = "1.0.1"
+version = "1.0.2"
 mirai.jvmTarget = JavaVersion.VERSION_11
 
 repositories {
@@ -19,4 +19,6 @@ repositories {
 dependencies {
     implementation("com.alibaba:fastjson:2.0.22")
     implementation("org.smartboot.socket:aio-pro:1.6.1")
+    implementation("net.coobird:thumbnailator:0.4.19")
+
 }

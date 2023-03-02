@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import kotlin.text.Charsets;
+import net.coobird.thumbnailator.Thumbnails;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.code.MiraiCode;
@@ -15,6 +16,10 @@ import top.ncserver.Chatsync;
 import top.ncserver.chatsync.Until.Config;
 import top.ncserver.chatsync.Until.TextToImg;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -140,7 +145,14 @@ public class MsgTools {
                                         msg1.put("type", "img");
                                         msg1.put("permission", event.getSender().getPermission().getLevel());
                                         msg1.put("sender", event.getSenderName());
-                                        msg1.put("data", Base64.getEncoder().encodeToString(response.body()));
+
+                                        BufferedImage image = Thumbnails.of(ImageIO.read(new ByteArrayInputStream(response.body())))
+                                                .scale(1f) //按比例放大缩小 和size() 必须使用一个 不然会报错
+                                                .outputQuality(0.5f)    //输出的图片质量  0~1 之间,否则报错
+                                                .asBufferedImage();
+                                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                                        ImageIO.write(image, "png", os);
+                                        msg1.put("data", Base64.getEncoder().encodeToString(os.toByteArray()));
                                         JSONObject jo = new JSONObject(msg1);
                                         Chatsync.chatsync.getLogger().info(jo.toJSONString());
                                         msgSend(Chatsync.session, jo.toJSONString());
