@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "top.ncserver"
-version = "1.0.2"
+version = "1.0.3"
 mirai.jvmTarget = JavaVersion.VERSION_11
 
 repositories {

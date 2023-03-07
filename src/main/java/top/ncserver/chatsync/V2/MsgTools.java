@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -221,13 +222,36 @@ public class MsgTools {
             System.out.println(msgJ);
             JSONObject jsonObject = JSONObject.parseObject(msgJ);
             if (Chatsync.INSTANCE.isConnected){
-                switch (jsonObject.getString("type")){
+                switch (jsonObject.getString("type")) {
                     case "msg":
                         if (Config.INSTANCE.getSyncMsg()) {
                             System.out.println("[" + jsonObject.getString("sender") + "]:" + jsonObject.getString("msg"));
                             QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg"))));
                         }
                         break;
+                    case "img": {
+                        if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getGroupID() != 0L) {
+                            String uuid = UUID.randomUUID().toString();
+                            Base64.Decoder decoder = Base64.getDecoder();
+                            byte[] b = decoder.decode(jsonObject.getString("msg"));
+                            // 处理数据
+                            for (int i = 0; i < b.length; ++i) {
+                                if (b[i] < 0) {
+                                    b[i] += 256;
+                                }
+                            }
+                            BufferedImage image = ImageIO.read(new ByteArrayInputStream(b));
+                            File outfile = new File(uuid + ".png");
+                            ImageIO.write(image, "png", outfile);
+                            try (ExternalResource resource = ExternalResource.create(outfile)) { // 使用文件 file
+                                Image img = ExternalResource.uploadAsImage(resource, bot.getGroup(Config.INSTANCE.getGroupID())); // 用来上传图片
+                                MessageChain messageChain = new MessageChainBuilder().append(new PlainText("[" + jsonObject.getString("player") + "]:")).append(img).asMessageChain();
+                                QQsendMsgMessageChain(messageChain);
+                            }
+                            System.gc();
+                        }
+                        break;
+                    }
                     case "playerJoinAndQuit":
                         if (Config.INSTANCE.getSyncMsg()) {
                             QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg"))));
