@@ -149,7 +149,7 @@ public class MsgTools {
 
                                         BufferedImage image = Thumbnails.of(ImageIO.read(new ByteArrayInputStream(response.body())))
                                                 .scale(1f) //按比例放大缩小 和size() 必须使用一个 不然会报错
-                                                .outputQuality(0.5f)    //输出的图片质量  0~1 之间,否则报错
+                                                .outputQuality(0.3f)    //输出的图片质量  0~1 之间,否则报错
                                                 .asBufferedImage();
                                         ByteArrayOutputStream os = new ByteArrayOutputStream();
                                         ImageIO.write(image, "png", os);
