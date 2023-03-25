@@ -13,6 +13,7 @@ import net.mamoe.mirai.utils.ExternalResource;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
 import top.ncserver.Chatsync;
+import top.ncserver.chatsync.Until.ColorCodeCulling;
 import top.ncserver.chatsync.Until.Config;
 import top.ncserver.chatsync.Until.TextToImg;
 
@@ -226,7 +227,7 @@ public class MsgTools {
                     case "msg":
                         if (Config.INSTANCE.getSyncMsg()) {
                             System.out.println("[" + jsonObject.getString("sender") + "]:" + jsonObject.getString("msg"));
-                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg"))));
+                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg")))));
                         }
                         break;
                     case "img": {
@@ -259,7 +260,7 @@ public class MsgTools {
                         //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                         break;
                     case "playerList":
-                        QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg"))));
+                        QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")))));
                         //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                         break;
                     case "command":
