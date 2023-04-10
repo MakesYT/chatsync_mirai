@@ -242,13 +242,18 @@ public class MsgTools {
                                 }
                             }
                             BufferedImage image = ImageIO.read(new ByteArrayInputStream(b));
-                            File outfile = new File(uuid + ".png");
+                            File temp = new File("temp");
+                            if (!temp.exists()) {
+                                temp.mkdir();
+                            }
+                            File outfile = new File("temp" + File.separator + uuid + ".png");
                             ImageIO.write(image, "png", outfile);
                             try (ExternalResource resource = ExternalResource.create(outfile)) { // 使用文件 file
                                 Image img = ExternalResource.uploadAsImage(resource, bot.getGroup(Config.INSTANCE.getGroupID())); // 用来上传图片
                                 MessageChain messageChain = new MessageChainBuilder().append(new PlainText("[" + jsonObject.getString("player") + "]:")).append(img).asMessageChain();
                                 QQsendMsgMessageChain(messageChain);
                             }
+                            outfile.delete();
                             System.gc();
                         }
                         break;
