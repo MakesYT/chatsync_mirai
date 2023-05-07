@@ -32,7 +32,7 @@ public final class Chatsync extends JavaPlugin {
     public static Bot bot;
     public static Chatsync chatsync;
     public static AioSession session;
-    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.isServerMsg()) ? MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg());
+    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.isServerMsg()) ? MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg()) : null;
     public boolean isConnected = false;
     public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.isServerMsg()) ? MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg()) : null;
     private Chatsync() {
