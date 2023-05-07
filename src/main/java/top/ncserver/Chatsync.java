@@ -96,7 +96,7 @@ public final class Chatsync extends JavaPlugin {
                 public void stateEvent0(AioSession aioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
                     if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)){
                         session = aioSession;
-                        if (bot!=null && Config.INSTANCE.getServerMsg()){
+                        if (bot!=null && Config.INSTANCE.getNotifyServerState()){
                             MsgTools.QQsendMsgMessageChain(ServerOnlineMsg);
                         }
                         {
@@ -118,7 +118,7 @@ public final class Chatsync extends JavaPlugin {
                         }
                         isConnected=true;
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
-                        if (bot!=null && Config.INSTANCE.getServerMsg()){
+                        if (bot!=null && Config.INSTANCE.getNotifyServerState()){
                             MsgTools.QQsendMsgMessageChain(ServerOfflineMsg);
                         }
                         isConnected=false;
