@@ -32,9 +32,9 @@ public final class Chatsync extends JavaPlugin {
     public static Bot bot;
     public static Chatsync chatsync;
     public static AioSession session;
-    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerMsg()) ? MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg()) : null;
+    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg());
     public boolean isConnected = false;
-    public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerMsg()) ? MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg()) : null;
+    public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
     private Chatsync() {
         super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.0.6")
                 .name("chatsync")
@@ -96,7 +96,7 @@ public final class Chatsync extends JavaPlugin {
                 public void stateEvent0(AioSession aioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
                     if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)){
                         session = aioSession;
-                        if (bot!=null){
+                        if (bot!=null && Config.INSTANCE.getServerMsg()){
                             MsgTools.QQsendMsgMessageChain(ServerOnlineMsg);
                         }
                         {
@@ -118,7 +118,7 @@ public final class Chatsync extends JavaPlugin {
                         }
                         isConnected=true;
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
-                        if (bot!=null){
+                        if (bot!=null && Config.INSTANCE.getServerMsg()){
                             MsgTools.QQsendMsgMessageChain(ServerOfflineMsg);
                         }
                         isConnected=false;
