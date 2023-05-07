@@ -37,7 +37,7 @@ public final  class ChatsyncCommand extends JCompositeCommand {
         System.out.println("消息格式已更改为"+style);
     }
     @Description("设置是否开启服务器状态群内通知")
-    @SubCommand("NotifyServerState")
+    @SubCommand("notifyserverstate")
     public void NotifyServerState(CommandContext context,boolean f) {
         Config.INSTANCE.setNotifyServerState(f);
         if (f){
