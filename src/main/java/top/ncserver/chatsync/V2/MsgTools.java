@@ -148,7 +148,7 @@ public class MsgTools {
                                             .uri(URI.create(Image.queryUrl(img)))
                                             .build();
                                     try {
-                                        System.out.println(Image.queryUrl(img));
+                                        //System.out.println(Image.queryUrl(img));
                                         HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
                                         msg1.put("type", "img");
@@ -161,15 +161,17 @@ public class MsgTools {
                                                 .asBufferedImage();
                                         ByteArrayOutputStream os = new ByteArrayOutputStream();
                                         ImageIO.write(image, "png", os);
+                                        Chatsync.chatsync.getLogger().info(new JSONObject(msg1).toJSONString());
                                         msg1.put("data", Base64.getEncoder().encodeToString(os.toByteArray()));
                                         JSONObject jo = new JSONObject(msg1);
-                                        Chatsync.chatsync.getLogger().info(jo.toJSONString());
+                                        //Chatsync.chatsync.getLogger().info(jo.toJSONString());
                                         for (AioSession aioSession : ClientManager.clients) {
                                             msgSend(aioSession, jo.toJSONString());
                                         }
 
                                     } catch (IOException | InterruptedException e) {
-                                        Chatsync.chatsync.getLogger().info("图片请求失败");
+                                        Chatsync.chatsync.getLogger().info("图片请求失败,地址:" + Image.queryUrl(img));
+                                        MsgTools.QQsendMsg("图片请求失败,地址:" + Image.queryUrl(img));
                                     }
                                     break;
                                 }
