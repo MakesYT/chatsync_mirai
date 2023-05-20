@@ -9,7 +9,6 @@ import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.BotOfflineEvent;
 import net.mamoe.mirai.event.events.BotOnlineEvent;
 import net.mamoe.mirai.message.code.MiraiCode;
-import net.mamoe.mirai.message.data.MessageChain;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
@@ -19,24 +18,27 @@ import org.smartboot.socket.transport.WriteBuffer;
 import top.ncserver.chatsync.Until.ChatsyncCommand;
 import top.ncserver.chatsync.Until.Config;
 import top.ncserver.chatsync.Until.TextToImg;
+import top.ncserver.chatsync.V2.ClientManager;
 import top.ncserver.chatsync.V2.MsgTools;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class Chatsync extends JavaPlugin {
     public static final Chatsync INSTANCE = new Chatsync();
 
     public static Bot bot;
     public static Chatsync chatsync;
-    public static AioSession session;
-    public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg());
-    public boolean isConnected = false;
-    public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
+
+    //public static AioSession session;
+    //public static MessageChain ServerOfflineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg());
+    //public boolean isConnected = false;
+    //public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.0.7")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.1.0")
                 .name("chatsync")
                 .author("makesyt")
                 .build());
@@ -85,28 +87,23 @@ public final class Chatsync extends JavaPlugin {
             AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
                 @Override
                 public void process0(AioSession aioSession, String s) {
-                    try {
-                        MsgTools.msgRead(aioSession,s);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    MsgTools.msgRead(aioSession, ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()) : "未命名服务器", s);
                 }
 
                 @Override
                 public void stateEvent0(AioSession aioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                    if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)){
-                        session = aioSession;
-                        if (bot!=null && Config.INSTANCE.getNotifyServerState()){
-                            MsgTools.QQsendMsgMessageChain(ServerOnlineMsg);
-                        }
+                    if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)) {
+                        ClientManager.clients.add(aioSession);
+                        //session = aioSession;
+
                         {
-                            Map<String,Object> msg1 = new HashMap<>();
-                            msg1.put("type","init");
-                            msg1.put("command",Config.INSTANCE.getSyncMsg());
-                            JSONObject jo= new JSONObject(msg1);
+                            Map<String, Object> msg1 = new HashMap<>();
+                            msg1.put("type", "init");
+                            msg1.put("command", Config.INSTANCE.getSyncMsg());
+                            JSONObject jo = new JSONObject(msg1);
                             Chatsync.chatsync.getLogger().info(jo.toJSONString());
                             try {
-                                WriteBuffer writeBuffer = session.writeBuffer();
+                                WriteBuffer writeBuffer = aioSession.writeBuffer();
                                 byte[] content = jo.toJSONString().getBytes();
                                 writeBuffer.writeInt(content.length);
                                 writeBuffer.write(content);
@@ -116,12 +113,11 @@ public final class Chatsync extends JavaPlugin {
 
                             }
                         }
-                        isConnected=true;
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
                         if (bot!=null && Config.INSTANCE.getNotifyServerState()){
-                            MsgTools.QQsendMsgMessageChain(ServerOfflineMsg);
+                            MsgTools.QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()) : "未命名服务器")));
                         }
-                        isConnected=false;
+                        ClientManager.clients.removeIf(client -> Objects.equals(client.getSessionID(), aioSession.getSessionID()));
                     }
                 }
             };
@@ -131,10 +127,10 @@ public final class Chatsync extends JavaPlugin {
                 server.start();
 
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
 
-        }, "MyThread").start();
+        }, "clientListener").start();
     }
 
 }
