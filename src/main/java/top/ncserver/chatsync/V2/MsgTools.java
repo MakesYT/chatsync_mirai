@@ -239,7 +239,7 @@ public class MsgTools {
 
 
             if (bot != null) {
-                System.out.println(msgJ);
+                //System.out.println(msgJ);
                 JSONObject jsonObject = JSONObject.parseObject(msgJ);
                 {
                     switch (jsonObject.getString("type")) {
@@ -269,6 +269,7 @@ public class MsgTools {
                                 ImageIO.write(image, "png", outfile);
                                 try (ExternalResource resource = ExternalResource.create(outfile)) { // 使用文件 file
                                     Image img = ExternalResource.uploadAsImage(resource, bot.getGroup(Config.INSTANCE.getGroupID())); // 用来上传图片
+                                    System.out.println("[" + jsonObject.getString("player") + "]的图片消息");
                                     MessageChain messageChain = new MessageChainBuilder().append(new PlainText("[" + jsonObject.getString("player") + "]:")).append(img).asMessageChain();
                                     QQsendMsgMessageChain(messageChain);
                                 }
@@ -279,11 +280,13 @@ public class MsgTools {
                         }
                         case "playerJoinAndQuit":
                             if (Config.INSTANCE.getSyncMsg()) {
+                                System.out.println(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName));
                                 QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
                             }
                             //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                             break;
                         case "playerList":
+                            System.out.println(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
                             QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                             break;
