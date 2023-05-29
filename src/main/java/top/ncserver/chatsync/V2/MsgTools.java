@@ -279,7 +279,7 @@ public class MsgTools {
                             break;
                         }
                         case "playerJoinAndQuit":
-                            if (Config.INSTANCE.getSyncMsg()) {
+                            if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getPlayerJoinAndQuitMsg()) {
                                 System.out.println(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName));
                                 QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
                             }
@@ -314,7 +314,8 @@ public class MsgTools {
                             break;
                         case "playerDeath":
                         case "obRe":
-                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                            if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getPlayerDeathMsg())
+                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             // QQsendMsg(CullColorCode(jsonObject.getString("msg")));
                             break;
                         case "init": {
