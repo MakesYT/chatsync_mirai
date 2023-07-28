@@ -42,7 +42,8 @@ import static top.ncserver.chatsync.Until.ColorCodeCulling.CullColorCode;
 public class MsgTools {
     static Pattern p = Pattern.compile("[(/+)\u4e00-\u9fa5(+*)]");
     static HttpClient client;
-    public  static void listenerInit(){
+
+    public static void listenerInit() {
         client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(2))
@@ -55,168 +56,172 @@ public class MsgTools {
 
             } else if (!ClientManager.clients.isEmpty()) {
                 if (event.getGroup().getId() == Config.INSTANCE.getGroupID()) {
-                    Map<String, Object> msg1 = new HashMap<>();
-                    String msgString = event.getMessage().contentToString();
-                    // msgString=msgString.replaceAll("\")
-                    //At at=new At()
-                    Matcher m = p.matcher(msgString.substring(1));
-                    if (msgString.equals("/recon")) {
-                        QQsendMsg("消息同步正在重新连接.....");
-                        for (AioSession aioSession : ClientManager.clients) {
-                            aioSession.close();
-                        }
-                    }else
-                    if (msgString.startsWith("/")&&!m.lookingAt()){
-                        if(event.getSender().getPermission().getLevel()>=1||msgString.equals("/ls")){
-                            boolean baned=false;
-                            String msg=event.getMessage().contentToString();
-                            String command =msg.replaceFirst("/","");
-                            for (String s : Config.INSTANCE.getBanCommand()) {
-                                if (command.matches(s)) {
-                                    baned = true;
-                                    break;
-                                }
+                    if (Config.INSTANCE.getUnconditionalAutoSync() || event.getMessage().contentToString().startsWith(Config.INSTANCE.getAutoSyncPrefix())) {
+                        Map<String, Object> msg1 = new HashMap<>();
+                        String msgString = event.getMessage().contentToString();
+                        // msgString=msgString.replaceAll("\")
+                        //At at=new At()
+                        Matcher m = p.matcher(msgString.substring(1));
+                        if (msgString.equals("/recon")) {
+                            QQsendMsg("消息同步正在重新连接.....");
+                            for (AioSession aioSession : ClientManager.clients) {
+                                aioSession.close();
                             }
-                            if (!baned) {
-                                msg1.put("type", "command");
-                                msg1.put("sender", event.getSenderName() + "(" + event.getSender().getId() + ")");
-                                msg1.put("command", msg);
+                        } else if (msgString.startsWith("/") && !m.lookingAt()) {
+                            if (event.getSender().getPermission().getLevel() >= 1 || msgString.equals("/ls")) {
+                                boolean baned = false;
+                                String msg = event.getMessage().contentToString();
+                                String command = msg.replaceFirst("/", "");
+                                for (String s : Config.INSTANCE.getBanCommand()) {
+                                    if (command.matches(s)) {
+                                        baned = true;
+                                        break;
+                                    }
+                                }
+                                if (!baned) {
+                                    msg1.put("type", "command");
+                                    msg1.put("sender", event.getSenderName() + "(" + event.getSender().getId() + ")");
+                                    msg1.put("command", msg);
+                                    JSONObject jo = new JSONObject(msg1);
+                                    Chatsync.chatsync.getLogger().info(jo.toJSONString());
+                                    for (AioSession aioSession : ClientManager.clients) {
+                                        msgSend(aioSession, jo.toJSONString());
+                                    }
+
+                                } else QQsendMsg("该命令已被屏蔽");
+
+                            } else if (msgString.contains("/LS") || msgString.contains("/IS") || msgString.contains("/Is")) {
+                                QQsendMsg("PS:正确的命令为/ls(均为小写.其大写形式为/LS)");
+
+                            } else {
+                                QQsendMsg("你无权执行" + msgString);
+
+                            }
+                        } else if (Config.INSTANCE.getSyncMsg()) {
+                            StringBuilder sb = new StringBuilder();
+                            JSONArray msg = JSON.parseArray(MessageChain.serializeToJsonString(event.getMessage()));
+                            if (event.getMessage().contains(QuoteReply.Key)) {
+                                QuoteReply quote = event.getMessage().get(QuoteReply.Key);
+                                At at = new At(quote.getSource().getFromId());
+                                StringBuilder msgBuilder = new StringBuilder();
+                                msgBuilder.append("\u00A75 回复了\n\u00A73");
+                                msgBuilder.append(at.getDisplay(event.getGroup()).replaceFirst("@", "["));
+                                msgBuilder.append("]:");
+                                msgBuilder.append(quote.getSource().getOriginalMessage());
+                                sb.append("\u2191---");
+                                msg1.put("type", "remsg");
+                                msg1.put("permission", event.getSender().getPermission().getLevel());
+                                msg1.put("sender", event.getSenderName());
+                                msg1.put("msg", msgBuilder);
                                 JSONObject jo = new JSONObject(msg1);
                                 Chatsync.chatsync.getLogger().info(jo.toJSONString());
                                 for (AioSession aioSession : ClientManager.clients) {
                                     msgSend(aioSession, jo.toJSONString());
                                 }
 
-                            }else QQsendMsg("该命令已被屏蔽");
-
-                        }else if (msgString.contains("/LS")||msgString.contains("/IS")||msgString.contains("/Is")){
-                            QQsendMsg("PS:正确的命令为/ls(均为小写.其大写形式为/LS)");
-
-                        }else{
-                            QQsendMsg("你无权执行"+msgString);
-
-                        }
-                    } else if (Config.INSTANCE.getSyncMsg())
-                    {
-                        StringBuilder sb= new StringBuilder();
-                        JSONArray msg = JSON.parseArray(MessageChain.serializeToJsonString(event.getMessage()));
-                        if (event.getMessage().contains(QuoteReply.Key)){
-                            QuoteReply quote = event.getMessage().get(QuoteReply.Key);
-                            At at=new At(quote.getSource().getFromId());
-                            StringBuilder msgBuilder=new StringBuilder();
-                            msgBuilder.append("\u00A75 回复了\n\u00A73");
-                            msgBuilder.append(at.getDisplay(event.getGroup()).replaceFirst("@", "["));
-                            msgBuilder.append("]:");
-                            msgBuilder.append(quote.getSource().getOriginalMessage());
-                            sb.append("\u2191---");
-                            msg1.put("type", "remsg");
-                            msg1.put("permission", event.getSender().getPermission().getLevel());
-                            msg1.put("sender", event.getSenderName());
-                            msg1.put("msg", msgBuilder);
-                            JSONObject jo = new JSONObject(msg1);
-                            Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                            for (AioSession aioSession : ClientManager.clients) {
-                                msgSend(aioSession, jo.toJSONString());
                             }
-
-                        }
-                        JSONArray originalMessage=((JSONObject)msg.get(0)).getJSONArray("originalMessage");
-                        msg1.clear();
-
-                        for (Object o : originalMessage) {
-                            System.out.println(((JSONObject) o).toJSONString());
-                            switch (((JSONObject)o).getString("type")){
-                                case "PlainText":{
-                                    sb.append(((JSONObject)o).getString("content"));
-                                    break;
-                                }
-                                case "At":{
-                                    At at=new At(((JSONObject)o).getLong("target"));
-                                    sb.append(at.getDisplay(event.getGroup()));
-                                    break;
-                                }
-                                case "AtAll":{
-                                    sb.append("@全体成员");
-                                    break;
-                                }
-                                case "Image":{
-                                    Image img=Image.fromId(((JSONObject)o).getString("imageId"));
-                                    HttpRequest request = HttpRequest.newBuilder()
-                                            .version(HttpClient.Version.HTTP_1_1)
-                                            .GET()
-                                            .timeout(Duration.ofSeconds(2))
-                                            .uri(URI.create(Image.queryUrl(img)))
-                                            .build();
-                                    try {
-                                        //System.out.println(Image.queryUrl(img));
-                                        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-                                        msg1.put("type", "img");
-                                        msg1.put("permission", event.getSender().getPermission().getLevel());
-                                        msg1.put("sender", event.getSenderName());
-
-                                        BufferedImage image = Thumbnails.of(ImageIO.read(new ByteArrayInputStream(response.body())))
-                                                .scale(1f) //按比例放大缩小 和size() 必须使用一个 不然会报错
-                                                .outputQuality(0.3f)    //输出的图片质量  0~1 之间,否则报错
-                                                .asBufferedImage();
-                                        ByteArrayOutputStream os = new ByteArrayOutputStream();
-                                        ImageIO.write(image, "png", os);
-                                        Chatsync.chatsync.getLogger().info(new JSONObject(msg1).toJSONString());
-                                        msg1.put("data", Base64.getEncoder().encodeToString(os.toByteArray()));
-                                        JSONObject jo = new JSONObject(msg1);
-                                        //Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                        for (AioSession aioSession : ClientManager.clients) {
-                                            msgSend(aioSession, jo.toJSONString());
-                                        }
-
-                                    } catch (IOException | InterruptedException e) {
-                                        Chatsync.chatsync.getLogger().info("图片请求失败,地址:" + Image.queryUrl(img));
-                                        MsgTools.QQsendMsg("图片请求失败,地址:" + Image.queryUrl(img));
-                                    }
-                                    break;
-                                }
-                                case "QuoteReply": {
-                                    break;
-                                }
-                                default: {
-
-                                    MessageChain messageChain = MessageChain.deserializeFromJsonString("[" + ((JSONObject) o).toJSONString() + "]");
-                                    sb.append(messageChain.get(0).contentToString());
-                                }
-                            }
-                        }
-                        if (sb.length() > 0) {
+                            JSONArray originalMessage = ((JSONObject) msg.get(0)).getJSONArray("originalMessage");
                             msg1.clear();
-                            msg1.put("type", "msg");
-                            msg1.put("permission", event.getSender().getPermission().getLevel());
-                            msg1.put("sender", event.getSenderName());
-                            msg1.put("msg", sb);
-                            JSONObject jo = new JSONObject(msg1);
-                            Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                            for (AioSession aioSession : ClientManager.clients) {
-                                msgSend(aioSession, jo.toJSONString());
+
+                            for (Object o : originalMessage) {
+                                System.out.println(((JSONObject) o).toJSONString());
+                                switch (((JSONObject) o).getString("type")) {
+                                    case "PlainText": {
+                                        sb.append(((JSONObject) o).getString("content"));
+                                        break;
+                                    }
+                                    case "At": {
+                                        At at = new At(((JSONObject) o).getLong("target"));
+                                        sb.append(at.getDisplay(event.getGroup()));
+                                        break;
+                                    }
+                                    case "AtAll": {
+                                        sb.append("@全体成员");
+                                        break;
+                                    }
+                                    case "Image": {
+                                        if (Config.INSTANCE.getSendImg()) {
+                                            Image img = Image.fromId(((JSONObject) o).getString("imageId"));
+                                            HttpRequest request = HttpRequest.newBuilder()
+                                                    .version(HttpClient.Version.HTTP_1_1)
+                                                    .GET()
+                                                    .timeout(Duration.ofSeconds(2))
+                                                    .uri(URI.create(Image.queryUrl(img)))
+                                                    .build();
+                                            try {
+                                                //System.out.println(Image.queryUrl(img));
+                                                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+                                                msg1.put("type", "img");
+                                                msg1.put("permission", event.getSender().getPermission().getLevel());
+                                                msg1.put("sender", event.getSenderName());
+
+                                                BufferedImage image = Thumbnails.of(ImageIO.read(new ByteArrayInputStream(response.body())))
+                                                        .scale(1f) //按比例放大缩小 和size() 必须使用一个 不然会报错
+                                                        .outputQuality(0.3f)    //输出的图片质量  0~1 之间,否则报错
+                                                        .asBufferedImage();
+                                                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                                                ImageIO.write(image, "png", os);
+                                                Chatsync.chatsync.getLogger().info(new JSONObject(msg1).toJSONString());
+                                                msg1.put("data", Base64.getEncoder().encodeToString(os.toByteArray()));
+                                                JSONObject jo = new JSONObject(msg1);
+                                                //Chatsync.chatsync.getLogger().info(jo.toJSONString());
+                                                for (AioSession aioSession : ClientManager.clients) {
+                                                    msgSend(aioSession, jo.toJSONString());
+                                                }
+
+                                            } catch (IOException | InterruptedException e) {
+                                                Chatsync.chatsync.getLogger().info("图片请求失败,地址:" + Image.queryUrl(img));
+                                                MsgTools.QQsendMsg("图片请求失败,地址:" + Image.queryUrl(img));
+                                            }
+                                            break;
+                                        } else {
+                                            sb.append("[图片]");
+                                            break;
+                                        }
+                                    }
+                                    case "QuoteReply": {
+                                        break;
+                                    }
+                                    default: {
+
+                                        MessageChain messageChain = MessageChain.deserializeFromJsonString("[" + ((JSONObject) o).toJSONString() + "]");
+                                        sb.append(messageChain.get(0).contentToString());
+                                    }
+                                }
+                            }
+                            if (sb.length() > 0) {
+                                msg1.clear();
+                                msg1.put("type", "msg");
+                                msg1.put("permission", event.getSender().getPermission().getLevel());
+                                msg1.put("sender", event.getSenderName());
+                                msg1.put("msg", sb);
+                                JSONObject jo = new JSONObject(msg1);
+                                Chatsync.chatsync.getLogger().info(jo.toJSONString());
+                                for (AioSession aioSession : ClientManager.clients) {
+                                    msgSend(aioSession, jo.toJSONString());
+                                }
+
                             }
 
-                        }
 
+                        }
 
                     }
-
                 }
-            }else{
-                if (Config.INSTANCE.getGroupID()==0L&&event.getSender().getPermission().getLevel()>=1&&event.getMessage().contentToString().equals("/chatsync bind this")){
+            } else {
+                if (Config.INSTANCE.getGroupID() == 0L && event.getSender().getPermission().getLevel() >= 1 && event.getMessage().contentToString().equals("/chatsync bind this")) {
                     Config.INSTANCE.setGroupID(event.getGroup().getId());
                     MsgTools.QQsendMsg("消息同步已绑定到此群");
 
-                }else
-                if (event.getGroup().getId()==Config.INSTANCE.getGroupID()){
-                    String msg=event.getMessage().contentToString();
-                    if (msg.contains("/ls")||msg.contains("/list")) {
+                } else if (event.getGroup().getId() == Config.INSTANCE.getGroupID()) {
+                    String msg = event.getMessage().contentToString();
+                    if (msg.contains("/ls") || msg.contains("/list")) {
                         MsgTools.QQsendMsg("抱歉,服务器处于离线状态");
-                    }else if (msg.contains("/LS")||msg.contains("/IS")||msg.contains("/Is")){
+                    } else if (msg.contains("/LS") || msg.contains("/IS") || msg.contains("/Is")) {
                         MsgTools.QQsendMsg("抱歉,服务器处于离线状态\nPS:正确的命令为/ls(均为小写.其大写形式为/LS)");
-                    }else if (msg.contains("%test")){
-                        File file= null;
+                    } else if (msg.contains("%test")) {
+                        File file = null;
                         try {
                             file = TextToImg.toImg("------ ======= Help ======= ------\n/actionbarmsg [玩家名称/all" +
                                     "] (-s:[秒]) [消息] - 给玩家发送actionbar消息\n/afk (-p:玩家名称) (原因) (-s) - 切换离开模式,可提供原因\n/afkcheck" +
@@ -250,7 +255,7 @@ public class MsgTools {
                             }
                             break;
                         case "img": {
-                            if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getGroupID() != 0L) {
+                            if (Config.INSTANCE.getGroupID() != 0L && Config.INSTANCE.getReceiveImg()) {
                                 String uuid = UUID.randomUUID().toString();
                                 Base64.Decoder decoder = Base64.getDecoder();
                                 byte[] b = decoder.decode(jsonObject.getString("msg"));
@@ -333,6 +338,7 @@ public class MsgTools {
         }
 
     }
+
     public static void msgSend(AioSession session, String msg) {
         try {
             WriteBuffer writeBuffer = session.writeBuffer();
@@ -340,29 +346,32 @@ public class MsgTools {
             writeBuffer.writeInt(content.length);
             writeBuffer.write(content);
             writeBuffer.flush();
-        }catch (IOException e) {
+        } catch (IOException e) {
             System.out.println(e.toString());
         }
 
     }
-    public static void QQsendMsg(String msg){
-        if (Config.INSTANCE.getGroupID()!=0L) {
+
+    public static void QQsendMsg(String msg) {
+        if (Config.INSTANCE.getGroupID() != 0L) {
             bot.getGroup(Config.INSTANCE.getGroupID()).sendMessage(new PlainText(msg));
-        }else{
+        } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,以启用消息同步");
         }
     }
-    public static void QQsendMsgMessageChain(MessageChain msg){
-        if (Config.INSTANCE.getGroupID()!=0L) {
+
+    public static void QQsendMsgMessageChain(MessageChain msg) {
+        if (Config.INSTANCE.getGroupID() != 0L) {
             bot.getGroup(Config.INSTANCE.getGroupID()).sendMessage(msg);
-        }else{
+        } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,以启用消息同步");
         }
     }
-    public static void QQsendImg(File file){
-        if (Config.INSTANCE.getGroupID()!=0L) {
-            ExternalResource.sendAsImage(file,bot.getGroup(Config.INSTANCE.getGroupID()));
-        }else{
+
+    public static void QQsendImg(File file) {
+        if (Config.INSTANCE.getGroupID() != 0L) {
+            ExternalResource.sendAsImage(file, bot.getGroup(Config.INSTANCE.getGroupID()));
+        } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,已启用消息同步");
         }
     }

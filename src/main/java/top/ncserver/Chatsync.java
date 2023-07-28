@@ -38,7 +38,7 @@ public final class Chatsync extends JavaPlugin {
     //public boolean isConnected = false;
     //public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.1.2")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.1.3")
                 .name("chatsync")
                 .author("makesyt")
                 .build());

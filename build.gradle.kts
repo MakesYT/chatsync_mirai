@@ -2,15 +2,19 @@ plugins {
     val kotlinVersion = "1.7.10"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
-
+    id("java-library")
     id("net.mamoe.mirai-console") version "2.13.4"
 
 }
 
 group = "top.ncserver"
-version = "1.1.2"
+version = "1.1.3"
 mirai.jvmTarget = JavaVersion.VERSION_11
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 repositories {
     maven("https://maven.aliyun.com/repository/public")
 
