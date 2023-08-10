@@ -1,41 +1,40 @@
 package top.ncserver.chatsync.Until;
 
 
-
 import javax.imageio.ImageIO;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 
 public class TextToImg {
-    public static File toImg(String text) throws IOException {
+    public static Font font=null;
+    public static FontMetrics fm=null;
+    public static InputStream toImg(String text) throws IOException {
+        if (fm ==null){
+            try {
+                font= Font.createFont(Font.TRUETYPE_FONT, TextToImg.class.getResourceAsStream("/MiSans-Normal.ttf"));
+                font=font.deriveFont(32F);
+                fm = Toolkit.getDefaultToolkit().getFontMetrics(font);
+            } catch (FontFormatException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         String[] strings =text.split("\n");
         int minX=0;
-
-        Font font =null;
-        try {
-            font= Font.createFont(Font.TRUETYPE_FONT, TextToImg.class.getResourceAsStream("/MiSans-Normal.ttf"));
-            font=font.deriveFont(64F);
-        } catch (FontFormatException e) {
-            throw new RuntimeException(e);
-        }
         for (String line: strings) {
 
             line=line.replaceAll("ﾧ\\S", "");
             line=line.replaceAll("§\\S", "");
             //font.getLineMetrics(line)
-            FontMetrics fm = Toolkit.getDefaultToolkit().getFontMetrics(font);
+
             int result = fm.stringWidth(line);
 
             if (minX<result) minX=result;
         }
-        int Y= strings.length*68+ (strings.length-1)*16+30;
-        minX=minX+64;
-
-
+        int Y= strings.length*34+ (strings.length-1)*8+15;
+        minX=minX+32;
         BufferedImage image = new BufferedImage(minX, Y,
                 BufferedImage.TYPE_INT_BGR);
         Graphics g = image.getGraphics();
@@ -47,7 +46,7 @@ public class TextToImg {
         for (int i=0;i< strings.length;i++){
             String nowLine=strings[i];
             int dex=0;
-            int nowX=32;
+            int nowX=16;
 
             for (int j = 0; j < nowLine.length(); j++) {
                 if (nowLine.charAt(j)=='ﾧ'||nowLine.charAt(j)=='§'){
@@ -110,21 +109,28 @@ public class TextToImg {
                     dex=dex+2;
 
                 }else {
-                    String b=Character.toString(nowLine.charAt(j));
-                    g.drawString(String.valueOf(nowLine.charAt(dex)), nowX, i>0?68+(i)*68+(i)*16:68);
-                    FontMetrics fm = Toolkit.getDefaultToolkit().getFontMetrics(font);
+                    g.drawString(String.valueOf(nowLine.charAt(dex)), nowX, i>0?34+(i)*34+(i)*8:34);
                     nowX+= fm.charWidth(nowLine.charAt(dex));
                     dex++;
                 }
             }
-            System.out.println(strings[i]);
+            //System.out.println(strings[i]);
 
         }
         g.dispose();
-        File outfile = new File("image.png");
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-        ImageIO.write(image, "png", outfile);
-
-        return outfile;
+// 创建一个MemoryCacheImageOutputStream对象，传入os作为参数
+        MemoryCacheImageOutputStream mcios = new MemoryCacheImageOutputStream(os);
+        long start = System.currentTimeMillis();
+// 使用ImageIO.write方法将image写入mcios，指定图片格式为png
+        ImageIO.write(image, "png", mcios);
+        long finish = System.currentTimeMillis();
+        long timeElapsed = finish - start;
+        System.out.println(timeElapsed);
+// 关闭mcios
+        mcios.close();
+        InputStream input = new ByteArrayInputStream(os.toByteArray());
+        return input;
     }
 }

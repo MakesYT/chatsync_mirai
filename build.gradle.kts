@@ -3,12 +3,12 @@ plugins {
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("java-library")
-    id("net.mamoe.mirai-console") version "2.13.4"
+    id("net.mamoe.mirai-console") version "2.15.0"
 
 }
 
 group = "top.ncserver"
-version = "1.1.3"
+version = "1.1.5"
 mirai.jvmTarget = JavaVersion.VERSION_11
 
 java {

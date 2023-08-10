@@ -23,6 +23,7 @@ import top.ncserver.chatsync.V2.MsgTools;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -38,7 +39,7 @@ public final class Chatsync extends JavaPlugin {
     //public boolean isConnected = false;
     //public static MessageChain ServerOnlineMsg = MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg());
     private Chatsync() {
-        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.1.3")
+        super(new JvmPluginDescriptionBuilder("top.ncserver.chatsync", "1.1.5")
                 .name("chatsync")
                 .author("makesyt")
                 .build());
@@ -57,7 +58,7 @@ public final class Chatsync extends JavaPlugin {
             bot = Bot.getInstances().get(0);
             if (Config.INSTANCE.getQQLoadedImg()) {
                 try {
-                    File file = TextToImg.toImg("消息同步QQ侧已加载,当前JDK版本:" + System.getProperty("java.version"));
+                    InputStream file = TextToImg.toImg("消息同步QQ侧已加载,当前JDK版本:" + System.getProperty("java.version"));
                     MsgTools.QQsendImg(file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -73,7 +74,7 @@ public final class Chatsync extends JavaPlugin {
             bot = Bot.getInstances().get(0);
             if (Config.INSTANCE.getQQLoadedImg()) {
                 try {
-                    File file = TextToImg.toImg("消息同步QQ侧已加载");
+                    InputStream file = TextToImg.toImg("消息同步QQ侧已加载");
                     MsgTools.QQsendImg(file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);

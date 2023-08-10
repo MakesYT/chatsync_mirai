@@ -19,10 +19,7 @@ import top.ncserver.chatsync.Until.TextToImg;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -221,7 +218,7 @@ public class MsgTools {
                     } else if (msg.contains("/LS") || msg.contains("/IS") || msg.contains("/Is")) {
                         MsgTools.QQsendMsg("抱歉,服务器处于离线状态\nPS:正确的命令为/ls(均为小写.其大写形式为/LS)");
                     } else if (msg.contains("%test")) {
-                        File file = null;
+                        InputStream file = null;
                         try {
                             file = TextToImg.toImg("------ ======= Help ======= ------\n/actionbarmsg [玩家名称/all" +
                                     "] (-s:[秒]) [消息] - 给玩家发送actionbar消息\n/afk (-p:玩家名称) (原因) (-s) - 切换离开模式,可提供原因\n/afkcheck" +
@@ -291,15 +288,19 @@ public class MsgTools {
                             //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                             break;
                         case "playerList":
-                            System.out.println(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
-                            QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                            if (!jsonObject.containsKey("online")){
+                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("有%s%位", "无").replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                            }else {
+                                System.out.println(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
+                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                            }
                             //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                             break;
                         case "command":
                             if (Config.INSTANCE.getImgTimer()) {
                                 QQsendMsg(Config.INSTANCE.getImgTimerMsgStyle1());
                                 long start = System.currentTimeMillis();
-                                File file = TextToImg.toImg(jsonObject.getString("command"));
+                                InputStream file = TextToImg.toImg(jsonObject.getString("command"));
                                 long finish = System.currentTimeMillis();
                                 long timeElapsed = finish - start;
                                 QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed))));
@@ -307,7 +308,7 @@ public class MsgTools {
                                 QQsendImg(file);
                                 System.gc();
                             } else {
-                                File file = TextToImg.toImg(jsonObject.getString("command"));
+                                InputStream file = TextToImg.toImg(jsonObject.getString("command"));
                                 QQsendImg(file);
                                 System.gc();
                             }
@@ -368,9 +369,15 @@ public class MsgTools {
         }
     }
 
-    public static void QQsendImg(File file) {
+    public static void QQsendImg(InputStream file) {
         if (Config.INSTANCE.getGroupID() != 0L) {
+
             ExternalResource.sendAsImage(file, bot.getGroup(Config.INSTANCE.getGroupID()));
+            try {
+                file.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,已启用消息同步");
         }
