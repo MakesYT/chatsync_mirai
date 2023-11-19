@@ -94,7 +94,7 @@ public class MsgTools {
                                 QQsendMsg("你无权执行" + msgString);
 
                             }
-                        } else if (Config.INSTANCE.getSyncMsg()) {
+                        } else  {
                             StringBuilder sb = new StringBuilder();
                             JSONArray msg = JSON.parseArray(MessageChain.serializeToJsonString(event.getMessage()));
                             if (event.getMessage().contains(QuoteReply.Key)) {
@@ -121,7 +121,7 @@ public class MsgTools {
                             msg1.clear();
 
                             for (Object o : originalMessage) {
-                                System.out.println(((JSONObject) o).toJSONString());
+                                //System.out.println(((JSONObject) o).toJSONString());
                                 switch (((JSONObject) o).getString("type")) {
                                     case "PlainText": {
                                         sb.append(((JSONObject) o).getString("content"));
@@ -187,7 +187,7 @@ public class MsgTools {
                                     }
                                 }
                             }
-                            if (sb.length() > 0) {
+                            if (sb.length() > 0&&(Config.INSTANCE.getSyncMsg())) {
                                 msg1.clear();
                                 msg1.put("type", "msg");
                                 msg1.put("permission", event.getSender().getPermission().getLevel());
