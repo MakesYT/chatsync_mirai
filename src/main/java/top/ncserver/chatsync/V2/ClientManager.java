@@ -6,7 +6,29 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 public class ClientManager {
-    public static LinkedList<AioSession> clients = new LinkedList<>();
-    public static HashMap<String, String> clientName = new HashMap<>();
+
+    public static HashMap<String, ClientInfo> clientName = new HashMap<>();
+    public static HashMap<Long, LinkedList<ClientInfo>> groupIdToClient = new HashMap<>();
+    public static class ClientInfo{
+        public  String Name;
+        public  AioSession aioSession;
+        public  String getName() {
+            return Name;
+        }
+
+        public  long getGroupId() {
+            return GroupId;
+        }
+
+        public  void setGroupId(long groupId) {
+            GroupId = groupId;
+        }
+
+        public  void setName(String name) {
+            Name = name;
+        }
+
+        public  long GroupId=0L;
+    }
 }
 

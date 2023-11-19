@@ -26,10 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,8 +48,8 @@ public class MsgTools {
                 Config.INSTANCE.setGroupID(event.getGroup().getId());
                 QQsendMsg("消息同步已绑定到此群");
 
-            } else if (!ClientManager.clients.isEmpty()) {
-                if (event.getGroup().getId() == Config.INSTANCE.getGroupID()) {
+            } else if (!ClientManager.clientName.isEmpty()) {
+                if (ClientManager.groupIdToClient.containsKey(event.getGroup().getId())) {
                     if (Config.INSTANCE.getUnconditionalAutoSync() || event.getMessage().contentToString().startsWith(Config.INSTANCE.getAutoSyncPrefix())) {
                         Map<String, Object> msg1 = new HashMap<>();
                         String msgString = event.getMessage().contentToString();
@@ -61,9 +58,10 @@ public class MsgTools {
                         Matcher m = p.matcher(msgString.substring(1));
                         if (msgString.equals("/recon")) {
                             QQsendMsg("消息同步正在重新连接.....");
-                            for (AioSession aioSession : ClientManager.clients) {
-                                aioSession.close();
-                            }
+                            ClientManager.clientName.forEach( (k, v) -> {
+                                v.aioSession.close();
+                                    }
+                            );
                         } else if (msgString.startsWith("/") && !m.lookingAt()) {
                             if (event.getSender().getPermission().getLevel() >= 1 || msgString.equals("/ls")) {
                                 boolean baned = false;
@@ -81,8 +79,8 @@ public class MsgTools {
                                     msg1.put("command", msg);
                                     JSONObject jo = new JSONObject(msg1);
                                     Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                    for (AioSession aioSession : ClientManager.clients) {
-                                        msgSend(aioSession, jo.toJSONString());
+                                    for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(event.getGroup().getId())) {
+                                        msgSend(clientInfo.aioSession, jo.toJSONString());
                                     }
 
                                 } else QQsendMsg("该命令已被屏蔽");
@@ -112,8 +110,8 @@ public class MsgTools {
                                 msg1.put("msg", msgBuilder);
                                 JSONObject jo = new JSONObject(msg1);
                                 Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                for (AioSession aioSession : ClientManager.clients) {
-                                    msgSend(aioSession, jo.toJSONString());
+                                for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(event.getGroup().getId())) {
+                                    msgSend(clientInfo.aioSession, jo.toJSONString());
                                 }
 
                             }
@@ -163,8 +161,8 @@ public class MsgTools {
                                                 msg1.put("data", Base64.getEncoder().encodeToString(os.toByteArray()));
                                                 JSONObject jo = new JSONObject(msg1);
                                                 //Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                                for (AioSession aioSession : ClientManager.clients) {
-                                                    msgSend(aioSession, jo.toJSONString());
+                                                for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(event.getGroup().getId())) {
+                                                    msgSend(clientInfo.aioSession, jo.toJSONString());
                                                 }
 
                                             } catch (IOException | InterruptedException e) {
@@ -195,8 +193,8 @@ public class MsgTools {
                                 msg1.put("msg", sb);
                                 JSONObject jo = new JSONObject(msg1);
                                 Chatsync.chatsync.getLogger().info(jo.toJSONString());
-                                for (AioSession aioSession : ClientManager.clients) {
-                                    msgSend(aioSession, jo.toJSONString());
+                                for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(event.getGroup().getId())) {
+                                    msgSend(clientInfo.aioSession, jo.toJSONString());
                                 }
 
                             }
@@ -217,18 +215,6 @@ public class MsgTools {
                         MsgTools.QQsendMsg("抱歉,服务器处于离线状态");
                     } else if (msg.contains("/LS") || msg.contains("/IS") || msg.contains("/Is")) {
                         MsgTools.QQsendMsg("抱歉,服务器处于离线状态\nPS:正确的命令为/ls(均为小写.其大写形式为/LS)");
-                    } else if (msg.contains("%test")) {
-                        InputStream file = null;
-                        try {
-                            file = TextToImg.toImg("------ ======= Help ======= ------\n/actionbarmsg [玩家名称/all" +
-                                    "] (-s:[秒]) [消息] - 给玩家发送actionbar消息\n/afk (-p:玩家名称) (原因) (-s) - 切换离开模式,可提供原因\n/afkcheck" +
-                                    " [玩家名称/all] - 检查玩家离开状态\n/air [玩家名称] [空气值] (-s) - 设置玩家空气值\n/alert [玩家名称] (原因" +
-                                    ") - 当玩家登录时提醒管理\n/alertlist - 列出所有记录的提醒\\n/aliaseditor (new) (alias-cmd) - 指令简写" +
-                                    "编辑\nFor next page perform cmi ? 2\n");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        MsgTools.QQsendImg(file);
                     }
                 }
             }
@@ -248,7 +234,7 @@ public class MsgTools {
                         case "msg":
                             if (Config.INSTANCE.getSyncMsg()) {
                                 System.out.println("[" + jsonObject.getString("sender") + "]:" + jsonObject.getString("msg"));
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getMsgStyle().replaceAll("%s%", jsonObject.getString("sender")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             }
                             break;
                         case "img": {
@@ -273,7 +259,7 @@ public class MsgTools {
                                     Image img = ExternalResource.uploadAsImage(resource, bot.getGroup(Config.INSTANCE.getGroupID())); // 用来上传图片
                                     System.out.println("[" + jsonObject.getString("player") + "]的图片消息");
                                     MessageChain messageChain = new MessageChainBuilder().append(new PlainText("[" + jsonObject.getString("player") + "]:")).append(img).asMessageChain();
-                                    QQsendMsgMessageChain(messageChain);
+                                    QQsendMsgMessageChain(aioSession.getSessionID(),messageChain);
                                 }
                                 outfile.delete();
                                 System.gc();
@@ -283,16 +269,16 @@ public class MsgTools {
                         case "playerJoinAndQuit":
                             if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getPlayerJoinAndQuitMsg()) {
                                 System.out.println(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName));
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getPlayerJoinAndQuitMsgStyle().replaceAll("%s%", CullColorCode(jsonObject.getString("player"))).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
                             }
                             //QQsendMsg("玩家"+CullColorCode(jsonObject.getString("player"))+jsonObject.getString("msg"));
                             break;
                         case "playerList":
                             if (!jsonObject.containsKey("online")){
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("有%s%位", "无").replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("有%s%位", "无").replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             }else {
                                 System.out.println(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName)));
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(ColorCodeCulling.CullColorCode(Config.INSTANCE.getPlayerListMsgStyle().replaceAll("%s%", jsonObject.getString("online")).replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             }
                             //QQsendMsg("当前有"+jsonObject.getString("online")+"位玩家在线\n"+jsonObject.getString("msg"));
                             break;
@@ -303,13 +289,13 @@ public class MsgTools {
                                 InputStream file = TextToImg.toImg(jsonObject.getString("command"));
                                 long finish = System.currentTimeMillis();
                                 long timeElapsed = finish - start;
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed))));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getImgTimerMsgStyle2().replaceAll("%s%", String.valueOf(timeElapsed))));
 
-                                QQsendImg(file);
+                                QQsendImg(aioSession.getSessionID(),file);
                                 System.gc();
                             } else {
                                 InputStream file = TextToImg.toImg(jsonObject.getString("command"));
-                                QQsendImg(file);
+                                QQsendImg(aioSession.getSessionID(),file);
                                 System.gc();
                             }
 
@@ -321,13 +307,26 @@ public class MsgTools {
                         case "playerDeath":
                         case "obRe":
                             if (Config.INSTANCE.getSyncMsg() && Config.INSTANCE.getPlayerDeathMsg())
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(CullColorCode(Config.INSTANCE.getPlayerDeathMsgStyle().replaceAll("%msg%", jsonObject.getString("msg")).replaceAll("%server%", serverName))));
                             // QQsendMsg(CullColorCode(jsonObject.getString("msg")));
                             break;
                         case "init": {
-                            ClientManager.clientName.put(aioSession.getSessionID(), jsonObject.getString("name"));
+                            ClientManager.ClientInfo clientInfo=new ClientManager.ClientInfo();
+                            clientInfo.setName(jsonObject.getString("name"));
+                            if (jsonObject.containsKey("groupId"))
+                                clientInfo.setGroupId(jsonObject.getLongValue("groupId"));
+                            ClientManager.clientName.put(aioSession.getSessionID(),clientInfo );
+                            if (clientInfo.GroupId==0L){
+                                if (ClientManager.groupIdToClient.containsKey(0L)){
+                                    ClientManager.groupIdToClient.get(0L).add(clientInfo);
+                                }else {
+                                    LinkedList<ClientManager.ClientInfo> value = new LinkedList<>();
+                                    value.add(clientInfo);
+                                    ClientManager.groupIdToClient.put(0L, value);
+                                }
+                            }
                             if (bot != null && Config.INSTANCE.getNotifyServerState()) {
-                                QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()) : "未命名服务器")));
+                                QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOnlineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()).Name : "未命名服务器")));
                             }
                         }
                     }
@@ -361,18 +360,23 @@ public class MsgTools {
         }
     }
 
-    public static void QQsendMsgMessageChain(MessageChain msg) {
-        if (Config.INSTANCE.getGroupID() != 0L) {
-            bot.getGroup(Config.INSTANCE.getGroupID()).sendMessage(msg);
+    public static void QQsendMsgMessageChain(String assionID,MessageChain msg) {
+
+        if (Config.INSTANCE.getGroupID() != 0L||ClientManager.clientName.get(assionID).GroupId!=0L) {
+            if (ClientManager.clientName.get(assionID).GroupId!=0L)
+                bot.getGroup(ClientManager.clientName.get(assionID).GroupId).sendMessage(msg);
+            else bot.getGroup(Config.INSTANCE.getGroupID()).sendMessage(msg);
         } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,以启用消息同步");
         }
     }
 
-    public static void QQsendImg(InputStream file) {
-        if (Config.INSTANCE.getGroupID() != 0L) {
-
-            ExternalResource.sendAsImage(file, bot.getGroup(Config.INSTANCE.getGroupID()));
+    public static void QQsendImg(String assionID,InputStream file) {
+        if (Config.INSTANCE.getGroupID() != 0L||ClientManager.clientName.get(assionID).GroupId!=0L) {
+            if (ClientManager.clientName.get(assionID).GroupId!=0L){
+                ExternalResource.sendAsImage(file, bot.getGroup(ClientManager.clientName.get(assionID).GroupId));
+            }else
+                ExternalResource.sendAsImage(file, bot.getGroup(Config.INSTANCE.getGroupID()));
             try {
                 file.close();
             } catch (IOException e) {

@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 
@@ -59,7 +60,7 @@ public final class Chatsync extends JavaPlugin {
             if (Config.INSTANCE.getQQLoadedImg()) {
                 try {
                     InputStream file = TextToImg.toImg("消息同步QQ侧已加载,当前JDK版本:" + System.getProperty("java.version"));
-                    MsgTools.QQsendImg(file);
+                    MsgTools.QQsendImg("1",file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -75,7 +76,7 @@ public final class Chatsync extends JavaPlugin {
             if (Config.INSTANCE.getQQLoadedImg()) {
                 try {
                     InputStream file = TextToImg.toImg("消息同步QQ侧已加载");
-                    MsgTools.QQsendImg(file);
+                    MsgTools.QQsendImg("1",file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -88,15 +89,12 @@ public final class Chatsync extends JavaPlugin {
             AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
                 @Override
                 public void process0(AioSession aioSession, String s) {
-                    MsgTools.msgRead(aioSession, ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()) : "未命名服务器", s);
+                    MsgTools.msgRead(aioSession, ClientManager.clientName.get(aioSession.getSessionID()) != null ? ((ClientManager.ClientInfo)ClientManager.clientName.get(aioSession.getSessionID())).Name : "未命名服务器", s);
                 }
 
                 @Override
                 public void stateEvent0(AioSession aioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
                     if (stateMachineEnum.equals(StateMachineEnum.NEW_SESSION)) {
-                        ClientManager.clients.add(aioSession);
-                        //session = aioSession;
-
                         {
                             Map<String, Object> msg1 = new HashMap<>();
                             msg1.put("type", "init");
@@ -116,9 +114,15 @@ public final class Chatsync extends JavaPlugin {
                         }
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
                         if (bot!=null && Config.INSTANCE.getNotifyServerState()){
-                            MsgTools.QQsendMsgMessageChain(MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()) : "未命名服务器")));
+                            MsgTools.QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()).Name : "未命名服务器")));
                         }
-                        ClientManager.clients.removeIf(client -> Objects.equals(client.getSessionID(), aioSession.getSessionID()));
+                        ClientManager.clientName.remove(aioSession.getSessionID());
+
+
+                        ClientManager.groupIdToClient.forEach((k,v)->{
+                            v.removeIf( clientInfo -> clientInfo.aioSession.getSessionID().equals(aioSession.getSessionID()));
+                        });
+
                     }
                 }
             };
