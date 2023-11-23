@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 public class ClientManager {
 
-    public static HashMap<String, ClientInfo> clientName = new HashMap<>();
+    public static HashMap<String, ClientInfo> aioSessionIdToClient = new HashMap<>();
     public static HashMap<Long, LinkedList<ClientInfo>> groupIdToClient = new HashMap<>();
     public static class ClientInfo{
         public  String Name;

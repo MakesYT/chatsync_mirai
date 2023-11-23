@@ -21,13 +21,10 @@ import top.ncserver.chatsync.Until.TextToImg;
 import top.ncserver.chatsync.V2.ClientManager;
 import top.ncserver.chatsync.V2.MsgTools;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Objects;
 
 public final class Chatsync extends JavaPlugin {
     public static final Chatsync INSTANCE = new Chatsync();
@@ -89,7 +86,7 @@ public final class Chatsync extends JavaPlugin {
             AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
                 @Override
                 public void process0(AioSession aioSession, String s) {
-                    MsgTools.msgRead(aioSession, ClientManager.clientName.get(aioSession.getSessionID()) != null ? ((ClientManager.ClientInfo)ClientManager.clientName.get(aioSession.getSessionID())).Name : "未命名服务器", s);
+                    MsgTools.msgRead(aioSession, ClientManager.aioSessionIdToClient.get(aioSession.getSessionID()) != null ? ((ClientManager.ClientInfo)ClientManager.aioSessionIdToClient.get(aioSession.getSessionID())).Name : "未命名服务器", s);
                 }
 
                 @Override
@@ -114,14 +111,12 @@ public final class Chatsync extends JavaPlugin {
                         }
                     }else if (stateMachineEnum.equals(StateMachineEnum.SESSION_CLOSED)){
                         if (bot!=null && Config.INSTANCE.getNotifyServerState()){
-                            MsgTools.QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg().replaceAll("%server%", ClientManager.clientName.get(aioSession.getSessionID()) != null ? ClientManager.clientName.get(aioSession.getSessionID()).Name : "未命名服务器")));
+                            MsgTools.QQsendMsgMessageChain(aioSession.getSessionID(),MiraiCode.deserializeMiraiCode(Config.INSTANCE.getServerOfflineMsg().replaceAll("%server%", ClientManager.aioSessionIdToClient.get(aioSession.getSessionID()) != null ? ClientManager.aioSessionIdToClient.get(aioSession.getSessionID()).Name : "未命名服务器")));
                         }
-                        ClientManager.clientName.remove(aioSession.getSessionID());
+                        ClientManager.aioSessionIdToClient.remove(aioSession.getSessionID());
 
 
-                        ClientManager.groupIdToClient.forEach((k,v)->{
-                            v.removeIf( clientInfo -> clientInfo.aioSession.getSessionID().equals(aioSession.getSessionID()));
-                        });
+                        ClientManager.groupIdToClient.forEach((k,v)-> v.removeIf(clientInfo -> clientInfo.aioSession.getSessionID().equals(aioSession.getSessionID())));
 
                     }
                 }
