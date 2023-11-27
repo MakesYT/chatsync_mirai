@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import kotlin.text.Charsets;
 import net.coobird.thumbnailator.Thumbnails;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.code.MiraiCode;
@@ -317,13 +318,16 @@ public class MsgTools {
                             // QQsendMsg(CullColorCode(jsonObject.getString("msg")));
                             break;
                         case "init": {
-                            System.out.println(msgJ);
+
+                            Chatsync.chatsync.getLogger().info(msgJ);
                             ClientManager.ClientInfo clientInfo=new ClientManager.ClientInfo();
                             clientInfo.setName(jsonObject.getString("name"));
+                            clientInfo.aioSession=aioSession;
                             if (jsonObject.containsKey("groupId"))
                                 clientInfo.setGroupId(jsonObject.getLongValue("groupId"));
                             ClientManager.aioSessionIdToClient.put(aioSession.getSessionID(),clientInfo );
                             if (clientInfo.GroupId==0L){
+                                Chatsync.chatsync.getLogger().info("服务器"+clientInfo.Name+"绑定到Mirai默认群号");
                                 if (ClientManager.groupIdToClient.containsKey(0L)){
                                     ClientManager.groupIdToClient.get(0L).add(clientInfo);
                                 }else {
@@ -332,6 +336,7 @@ public class MsgTools {
                                     ClientManager.groupIdToClient.put(0L, value);
                                 }
                             }else {
+                                Chatsync.chatsync.getLogger().info("服务器"+clientInfo.Name+"绑定到"+clientInfo.GroupId);
                                 if (ClientManager.groupIdToClient.containsKey(clientInfo.GroupId)){
                                     ClientManager.groupIdToClient.get(clientInfo.GroupId).add(clientInfo);
                                 }else {
@@ -382,7 +387,12 @@ public class MsgTools {
         if (bot ==null){
             return;
         }
-        bot.getGroup(groupId).sendMessage(new PlainText(msg));
+        Group group = bot.getGroup(groupId);
+        if (group == null) {
+            Chatsync.chatsync.getLogger().error("无法获取到群"+groupId+",请检查机器人是否在群中");
+            return;
+        }
+        group.sendMessage(new PlainText(msg));
 
     }
 
@@ -391,9 +401,21 @@ public class MsgTools {
             return;
         }
         if (Config.INSTANCE.getGroupID() != 0L||ClientManager.aioSessionIdToClient.get(assionID).GroupId!=0L) {
-            if (ClientManager.aioSessionIdToClient.get(assionID).GroupId!=0L)
-                bot.getGroup(ClientManager.aioSessionIdToClient.get(assionID).GroupId).sendMessage(msg);
-            else bot.getGroup(Config.INSTANCE.getGroupID()).sendMessage(msg);
+            if (ClientManager.aioSessionIdToClient.get(assionID).GroupId!=0L) {
+                Group group1 = bot.getGroup(ClientManager.aioSessionIdToClient.get(assionID).GroupId);
+                if (group1 == null) {
+                    Chatsync.chatsync.getLogger().error("无法获取到群"+ClientManager.aioSessionIdToClient.get(assionID).GroupId+",请检查机器人是否在群中");
+                    return;
+                }
+                group1.sendMessage(msg);
+            } else {
+                Group group = bot.getGroup(Config.INSTANCE.getGroupID());
+                if (group == null) {
+                    Chatsync.chatsync.getLogger().error("无法获取到群"+Config.INSTANCE.getGroupID()+",请检查机器人是否在群中");
+                    return;
+                }
+                group.sendMessage(msg);
+            }
         } else {
             Chatsync.chatsync.getLogger().info("请绑定QQ群,以启用消息同步");
         }
