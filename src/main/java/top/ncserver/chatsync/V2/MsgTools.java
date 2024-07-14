@@ -50,7 +50,7 @@ public class MsgTools {
                 QQsendMsg(event.getGroup().getId(),"消息同步已绑定到此群");
 
             } else if (!ClientManager.aioSessionIdToClient.isEmpty()) {
-                if (ClientManager.groupIdToClient.containsKey(event.getGroup().getId())) {
+                if (event.getGroup().getId() == Config.INSTANCE.getGroupID() || ClientManager.groupIdToClient.containsKey(event.getGroup().getId())) {
                     if (Config.INSTANCE.getUnconditionalAutoSync() || event.getMessage().contentToString().startsWith(Config.INSTANCE.getAutoSyncPrefix())) {
                         Map<String, Object> msg1 = new HashMap<>();
                         String msgString = event.getMessage().contentToString();
@@ -364,6 +364,9 @@ public class MsgTools {
             for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(0L)) {
                 AioMsgSend(msg, clientInfo);
             }
+        }
+        if (ClientManager.groupIdToClient.get(groupId) == null) {
+            return;
         }
         for (ClientManager.ClientInfo clientInfo : ClientManager.groupIdToClient.get(groupId)) {
             AioMsgSend(msg, clientInfo);
